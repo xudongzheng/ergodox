@@ -42,13 +42,6 @@ enum {
 	XZ_LAY1,
 	XZ_LAY2,
 	XZ_LAY3,
-	XZ_TLDA,
-	XZ_TLDE,
-	XZ_TLDI,
-	XZ_TLDO,
-	XZ_TLDU,
-	XZ_INVE,
-	XZ_INVQ,
 };
 
 // Define the keycode for the base layer. TODO KC_MS_BTN3 does not work.
@@ -100,17 +93,19 @@ uint16_t xz_layer_1[] = {
 	KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
 };
 
-// Define layer 2 for additional punctuation.
+// Define layer 2 for additional punctuation. TODO some of these will fail to
+// work if software Colemak is enabled. Additionally, these characters will
+// likely not work outside of the main desktop.
 uint16_t xz_layer_2[] = {
 	KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
 	KC_NO, KC_NO, KC_NO, KC_TILD, KC_GRAVE, KC_HASH, KC_NO,
-	KC_NO, KC_NO, KC_EXLM, KC_PLUS, KC_EQUAL, KC_DLR,
+	KC_NO, RALT(KC_A), KC_EXLM, KC_PLUS, KC_EQUAL, KC_DLR,
 	KC_NO, KC_NO, KC_AT, KC_LBRACKET, KC_RBRACKET, KC_PERC, KC_NO,
 	KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
 	KC_NO, KC_NO, KC_NO, KC_QUOTE, KC_DQUO, KC_NO,
 	KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
-	KC_NO, KC_CIRC, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
-	KC_AMPR, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
+	KC_NO, KC_CIRC, RALT(KC_Y), RALT(KC_U), KC_NO, KC_NO, KC_NO,
+	KC_AMPR, RALT(KC_N), RALT(KC_E), RALT(KC_I), RALT(KC_O), KC_NO,
 	KC_NO, KC_ASTR, KC_MINUS, KC_UNDS, KC_LCBR, KC_RCBR, KC_NO,
 	KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
 	KC_NO, KC_NO, KC_NO, KC_NO, KC_LPRN, KC_RPRN,
@@ -166,6 +161,9 @@ void xz_resolve_keycode(uint16_t keycode) {
 	} else if (keycode == KC_LGUI) {
 		xz_resolve_modifier(&xz_modifier_gui, KC_LGUI);
 	} else {
+		if (keycode & QK_RALT) {
+			register_code(KC_RALT);
+		}
 		if (keycode & QK_LSFT) {
 			xz_resolve_modifier(&xz_modifier_shift, KC_LSHIFT);
 		}
@@ -182,6 +180,9 @@ void xz_resolve_keycode(uint16_t keycode) {
 		}
 		if (xz_modifier_gui) {
 			xz_resolve_modifier(&xz_modifier_gui, KC_LGUI);
+		}
+		if (keycode & QK_RALT) {
+			unregister_code(KC_RALT);
 		}
 	}
 }
