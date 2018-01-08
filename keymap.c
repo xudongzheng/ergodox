@@ -1,4 +1,4 @@
-#include "ergodox.h"
+#include "ergodox_ez.h"
 
 // Define our own keyboard matrix. It doesn't matter if we overwrite the
 // standard enum values since everything is handled in process_record_user().
