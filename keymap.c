@@ -61,12 +61,11 @@ uint16_t xz_layer_base[] = {
 };
 
 // If the user has Colemak in software, we need to send QWERTY keys so input
-// isn't converted to Colemak twice. On Windows computers, we have escaped
-// mapped to caps lock and vice versa so we need to account for that.
+// isn't converted to Colemak twice.
 uint16_t xz_layer_colemak[] = {
 	XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS,
-	XZ_PASS, XZ_PASS, XZ_PASS, KC_E, KC_R, KC_T, KC_ESCAPE,
-	KC_CAPSLOCK, XZ_PASS, KC_S, KC_D, KC_F, KC_G,
+	XZ_PASS, XZ_PASS, XZ_PASS, KC_E, KC_R, KC_T, XZ_PASS,
+	XZ_PASS, XZ_PASS, KC_S, KC_D, KC_F, KC_G,
 	XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS,
 	XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS,
 	XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS,
