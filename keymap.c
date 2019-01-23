@@ -1,5 +1,3 @@
-#include "ergodox_ez.h"
-
 // Define our own keyboard matrix. It doesn't matter if we overwrite the
 // standard enum values since everything is handled in process_record_user().
 enum {
@@ -18,7 +16,7 @@ enum {
 };
 
 // Set custom keymap to be used by the QMK firmware.
-const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {KEYMAP(
+const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {LAYOUT_ergodox(
 	XZ_L11, XZ_L12, XZ_L13, XZ_L14, XZ_L15, XZ_L16, XZ_L17,
 	XZ_L21, XZ_L22, XZ_L23, XZ_L24, XZ_L25, XZ_L26, XZ_L27,
 	XZ_L31, XZ_L32, XZ_L33, XZ_L34, XZ_L35, XZ_L36,
@@ -33,180 +31,147 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {KEYMAP(
 	XZ_R61, XZ_R62, XZ_R63, XZ_R64, XZ_R65, XZ_R66
 )};
 
-// Define custom keys and characters. TODO alternatively we can set XZ_PASS to
-// KC_TRANSPARENT and start XZ_LAY0 at SAFE_RANGE.
+// Define values for our custom keys. These values must be identical to those in
+// generate.go for the comparisons to be valid. These may be triggered with
+// arbitrary modifiers.
 enum {
-	XZ_PASS = SAFE_RANGE,
-	XZ_CLMK,
-	XZ_LAY0,
-	XZ_LAY1,
-	XZ_LAY2,
-	XZ_LAY3,
+	XZ_PHYS_QWERTY = KC_KP_1,
+	XZ_PHYS_MAC,
+	XZ_PHYS_LAYER0,
+	XZ_PHYS_LAYER1,
+	XZ_PHYS_LAYER2,
+	XZ_PHYS_LAYER3,
 };
 
-// Define the keycode for the base layer. TODO KC_MS_BTN3 does not work.
-uint16_t xz_layer_base[] = {
-	KC_MS_BTN3, KC_1, KC_2, KC_3, KC_4, KC_5, KC_PSCREEN,
-	KC_TAB, KC_Q, KC_W, KC_F, KC_P, KC_G, KC_CAPSLOCK,
-	KC_ESCAPE, KC_A, KC_R, KC_S, KC_T, KC_D,
-	XZ_LAY2, KC_Z, KC_X, KC_C, KC_V, KC_B, KC_AUDIO_VOL_DOWN,
-	XZ_CLMK, KC_NO, KC_LALT, KC_LEFT, KC_DOWN,
-	KC_DELETE, KC_HOME, KC_PGUP, KC_SPACE, KC_LCTL, KC_LGUI,
-	KC_NO, KC_6, KC_7, KC_8, KC_9, KC_0, KC_APPLICATION,
-	KC_AUDIO_MUTE, KC_J, KC_L, KC_U, KC_Y, KC_SCOLON, KC_BSLASH,
-	KC_H, KC_N, KC_E, KC_I, KC_O, KC_BSPACE,
-	KC_AUDIO_VOL_UP, KC_K, KC_M, KC_COMMA, KC_DOT, KC_SLASH, XZ_LAY2,
-	KC_UP, KC_RIGHT, KC_LALT, KC_NO, XZ_LAY3,
-	KC_END, KC_INSERT, KC_PGDOWN, XZ_LAY1, KC_LSHIFT, KC_ENTER,
+// Define modifiers and use a boolean array to store modifier states. The enum
+// values define the index for each modifier. Store the corresponding keycode.
+enum {
+	XZ_MOD_LSHIFT,
+	XZ_MOD_LCTRL,
+	XZ_MOD_LGUI,
+	XZ_MOD_LALT,
+	XZ_MOD_RALT,
 };
+uint8_t xz_modifier_keys[] = {KC_LSHIFT, KC_LCTRL, KC_LGUI, KC_LALT, KC_RALT};
+#define XZ_M_LEN(X) sizeof(X)/sizeof(X[0])
+bool xz_modifiers[XZ_M_LEN(xz_modifier_keys)];
 
-// If the user has Colemak in software, we need to send QWERTY keys so input
-// isn't converted to Colemak twice.
-uint16_t xz_layer_colemak[] = {
-	XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS,
-	XZ_PASS, XZ_PASS, XZ_PASS, KC_E, KC_R, KC_T, XZ_PASS,
-	XZ_PASS, XZ_PASS, KC_S, KC_D, KC_F, KC_G,
-	XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS,
-	XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS,
-	XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS,
-	XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS,
-	XZ_PASS, KC_Y, KC_U, KC_I, KC_O, KC_P, XZ_PASS,
-	XZ_PASS, KC_J, KC_K, KC_L, KC_SCOLON, XZ_PASS,
-	XZ_PASS, KC_N, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS,
-	XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS,
-	XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS, XZ_PASS,
-};
+// Keep track of the current layer and whether QWERTY/MacOS mode is on.
+uint8_t  xz_layer;
+bool xz_flag_qwerty, xz_flag_mac;
 
-// Define layer 1 for the function keys.
-uint16_t xz_layer_1[] = {
-	KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
-	KC_NO, KC_F1, KC_F2, KC_F3, KC_F4, KC_NO, KC_NO,
-	KC_NO, KC_F5, KC_F6, KC_F7, KC_F8, KC_NO,
-	KC_NO, KC_F9, KC_F10, KC_F11, KC_F12, KC_NO, KC_NO,
-	KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
-	KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
-	KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
-	KC_NO, KC_NO, KC_F13, KC_F14, KC_F15, KC_F16, KC_NO,
-	KC_NO, KC_F17, KC_F18, KC_F19, KC_F20, KC_NO,
-	KC_NO, KC_NO, KC_F21, KC_F22, KC_F23, KC_F24, KC_NO,
-	KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
-	KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
-};
-
-// Define layer 2 for additional punctuation. TODO some of these will fail to
-// work if software Colemak is enabled. Additionally, these characters will
-// likely not work outside of the main desktop.
-uint16_t xz_layer_2[] = {
-	KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
-	KC_NO, KC_NO, RALT(LSFT(KC_1)), KC_TILD, KC_GRAVE, KC_HASH, KC_NO,
-	KC_NO, RALT(KC_A), KC_EXLM, KC_PLUS, KC_EQUAL, KC_DLR,
-	KC_NO, RALT(KC_SLASH), KC_AT, KC_LBRACKET, KC_RBRACKET, KC_PERC, KC_NO,
-	KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
-	KC_NO, KC_NO, KC_NO, KC_QUOTE, KC_DQUO, KC_NO,
-	KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
-	KC_NO, KC_CIRC, RALT(KC_Y), RALT(KC_U), KC_NO, KC_NO, KC_NO,
-	KC_AMPR, RALT(KC_N), RALT(KC_E), RALT(KC_I), RALT(KC_O), KC_NO,
-	KC_NO, KC_ASTR, KC_MINUS, KC_UNDS, KC_LCBR, KC_RCBR, KC_NO,
-	KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
-	KC_NO, KC_NO, KC_NO, KC_NO, KC_LPRN, KC_RPRN,
-};
-
-// Define layer 3 for a right-handed number pad.
-uint16_t xz_layer_3[] = {
-	KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
-	KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
-	KC_NO, KC_SLASH, KC_ASTR, KC_MINUS, KC_PLUS, KC_NO,
-	KC_NO, KC_NO, KC_NO, KC_NO, KC_DOT, KC_NO, KC_NO,
-	KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
-	KC_NO, KC_NO, KC_NO, KC_NO, KC_LCTRL, KC_NO,
-	KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
-	KC_NO, KC_NO, KC_7, KC_8, KC_9, LSFT(KC_SCOLON), KC_NO,
-	KC_NO, KC_4, KC_5, KC_6, KC_0, KC_BSPACE,
-	KC_NO, KC_NO, KC_1, KC_2, KC_3, KC_NO, KC_NO,
-	KC_NO, KC_NO, KC_NO, KC_NO, XZ_LAY0,
-	KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO,
-};
-
-// Maintain the state of the keyboard.
-uint16_t xz_layer;
-bool xz_colemak;
-bool xz_modifier_ctrl, xz_modifier_shift, xz_modifier_alt, xz_modifier_gui;
-
-void xz_resolve_modifier(bool *active, uint16_t keycode) {
-	if (*active) {
+void xz_toggle_modifier(int i) {
+	bool result = xz_modifiers[i];
+	uint16_t keycode = xz_modifier_keys[i];
+	if (result) {
 		unregister_code(keycode);
 	} else {
 		register_code(keycode);
 	}
-	*active = !*active;
+	xz_modifiers[i] = !result;
 }
 
-void xz_resolve_keycode(uint16_t keycode) {
-	if (keycode == XZ_CLMK) {
-		xz_colemak = !xz_colemak;
-	} else if (keycode == XZ_LAY0) {
-		xz_layer = 0;
-	} else if (keycode == XZ_LAY1) {
-		xz_layer = 1;
-	} else if (keycode == XZ_LAY2) {
-		xz_layer = 2;
-	} else if (keycode == XZ_LAY3) {
-		xz_layer = 3;
-	} else if (keycode == KC_LCTL) {
-		xz_resolve_modifier(&xz_modifier_ctrl, KC_LCTRL);
-	} else if (keycode == KC_LSHIFT) {
-		xz_resolve_modifier(&xz_modifier_shift, KC_LSHIFT);
-	} else if (keycode == KC_LALT) {
-		xz_resolve_modifier(&xz_modifier_alt, KC_LALT);
-	} else if (keycode == KC_LGUI) {
-		xz_resolve_modifier(&xz_modifier_gui, KC_LGUI);
+uint16_t xz_get_byte(uint16_t ptr) {
+	return pgm_read_byte_near(keymapData + ptr);
+}
+
+uint16_t xz_get_word(uint16_t ptr) {
+	return 256*xz_get_byte(ptr) + xz_get_byte(ptr+1);
+}
+
+void xz_record_internal(uint16_t keyPtr) {
+	uint8_t stdLen = xz_get_byte(keyPtr);
+	uint16_t macPtr = keyPtr + 1 + 2*stdLen;
+	uint8_t macLen = xz_get_byte(macPtr);
+	uint16_t colemakPtr = macPtr + 1 + 2*macLen;
+	uint8_t colemak = xz_get_byte(colemakPtr);
+	uint8_t qwerty = xz_get_byte(colemakPtr+1);
+
+	// If the key is a compound key, handle keys recursively.
+	if (stdLen + macLen > 0) {
+		uint8_t len;
+		uint16_t ptr;
+		if (xz_flag_mac && macLen > 0) {
+			len = macLen;
+			ptr = macPtr + 1;
+		} else {
+			len = stdLen;
+			ptr = keyPtr + 1;
+		}
+		for (int i = 0; i < len; i++) {
+			xz_record_internal(xz_get_word(ptr + 2*i));
+		}
+		return;
+	}
+
+	// Process the underlying key. we only have to consider the Colemak key
+	// since the QWERTY key is not defined for any of the following cases. For
+	// all of the matched cases, return since no further actions needed.
+	switch (colemak) {
+	case KC_LSHIFT:
+		xz_toggle_modifier(XZ_MOD_LSHIFT);
+		return;
+	case KC_LCTRL:
+		xz_toggle_modifier(XZ_MOD_LCTRL);
+		return;
+	case KC_LGUI:
+		xz_toggle_modifier(XZ_MOD_LGUI);
+		return;
+	case KC_LALT:
+		xz_toggle_modifier(XZ_MOD_LALT);
+		return;
+	case KC_RALT:
+		xz_toggle_modifier(XZ_MOD_RALT);
+		return;
+	case XZ_PHYS_QWERTY:
+		xz_flag_qwerty = !xz_flag_qwerty;
+		return;
+	case XZ_PHYS_MAC:
+		xz_flag_mac = !xz_flag_mac;
+		return;
+	}
+
+	// Switch layer if requested. Return since no further actions needed.
+	if (colemak >= XZ_PHYS_LAYER0 && colemak <= XZ_PHYS_LAYER3) {
+		xz_layer = colemak - XZ_PHYS_LAYER0;
+		return;
+	}
+
+	// Handle regular key. Send QWERTY key if QWERTY mode is enabled.
+	uint16_t keycode;
+	if (xz_flag_qwerty && qwerty != KC_NO) {
+		keycode = qwerty;
 	} else {
-		if (keycode & QK_RALT) {
-			register_code(KC_RALT);
-		}
-		if (keycode & QK_LSFT) {
-			xz_resolve_modifier(&xz_modifier_shift, KC_LSHIFT);
-		}
-		register_code(keycode);
-		unregister_code(keycode);
-		if (xz_modifier_ctrl) {
-			xz_resolve_modifier(&xz_modifier_ctrl, KC_LCTRL);
-		}
-		if (xz_modifier_shift) {
-			xz_resolve_modifier(&xz_modifier_shift, KC_LSHIFT);
-		}
-		if (xz_modifier_alt) {
-			xz_resolve_modifier(&xz_modifier_alt, KC_LALT);
-		}
-		if (xz_modifier_gui) {
-			xz_resolve_modifier(&xz_modifier_gui, KC_LGUI);
-		}
-		if (keycode & QK_RALT) {
-			unregister_code(KC_RALT);
+		keycode = colemak;
+	}
+	register_code(keycode);
+	unregister_code(keycode);
+
+	// Unset all modifiers.
+	for (int i = 0; i < XZ_M_LEN(xz_modifiers); i++) {
+		if (xz_modifiers[i]) {
+			xz_toggle_modifier(i);
 		}
 	}
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-	// We don't care when a key is released, only when it is pressed. TODO weird
-	// things can potentially happen if we hold a key on the keyboard.
+	// We don't care when a key is released, only when it is pressed.
 	if (!record->event.pressed) {
 		return false;
 	}
 
-	// Resolve the key based on the active layer.
-	if (xz_layer == 1) {
-		xz_resolve_keycode(xz_layer_1[keycode]);
+	// Map the key to a virtual key. Variable "keycode" comes from the keyboard
+	// matrix and is unrelated to the keycode that is sent to the client.
+	uint16_t layerPtr = 2 * (76*xz_layer + keycode);
+	uint16_t keyPtr = xz_get_word(layerPtr);
+
+	// Reset layer to the main layer if not on layer 3.
+	if (xz_layer != 3) {
 		xz_layer = 0;
-	} else if (xz_layer == 2) {
-		xz_resolve_keycode(xz_layer_2[keycode]);
-		xz_layer = 0;
-	} else if (xz_layer == 3) {
-		xz_resolve_keycode(xz_layer_3[keycode]);
-	} else if (xz_colemak && xz_layer_colemak[keycode] != XZ_PASS) {
-		xz_resolve_keycode(xz_layer_colemak[keycode]);
-	} else {
-		xz_resolve_keycode(xz_layer_base[keycode]);
 	}
+
+	// Handle press.
+	xz_record_internal(keyPtr);
 	return false;
 }
