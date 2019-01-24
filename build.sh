@@ -16,6 +16,7 @@ fi
 dest=qmk/keyboards/ergodox_ez/keymaps/xudongz
 mkdir -p $dest
 go generate
+cp rules.mk $dest
 
 cd qmk
 make -j $(nproc) keyboard=ergodox_ez keymap=xudongz
